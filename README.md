@@ -1,23 +1,18 @@
-RAG Agent with LangGraph & ChromaDB
-✈️
-Overview
+# ✈️ RAG Agent with LangGraph & ChromaDB  
 
-This project is an experimental Retrieval-Augmented Generation (RAG) system powered by LangGraph.
-The agent dynamically decides how to answer user questions by:
+## Overview  
+This project is an **experimental Retrieval-Augmented Generation (RAG) system** powered by **LangGraph**.  
+The agent intelligently decides how to answer user queries by:  
 
-Querying a ChromaDB vector store (knowledge base)
+- 🔍 Querying a **ChromaDB** vector store (knowledge base)  
+- 🌐 Performing a **web search via Tavily** if local knowledge is insufficient  
+- 💬 Leveraging **recent conversation history** when context alone is enough  
 
-Performing a web search if local knowledge is insufficient (Tavily)
+Currently, the project is in its **early development stage**.  
 
-Using recent conversation history (messages) when context is enough
+---
 
-Currently, the project is in its initial development stage.
-
-
-What I want to test further in the future:
-
-Long term memory store
-
-Streamlit – frontend
-
-FastAPI – API deployment
+## 🔮 Future Plans - testing
+- 🧠 Long-term memory store  
+- 🎨 **Streamlit** for frontend interface  
+- ⚡ **FastAPI** for API deployment
