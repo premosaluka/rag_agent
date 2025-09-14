@@ -3,6 +3,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
 from src.state.state import GraphState
+from langchain.schema import HumanMessage, AIMessage, BaseMessage
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -18,35 +19,37 @@ prompt = ChatPromptTemplate.from_messages([
 
 generation_chain = prompt | llm | StrOutputParser()
 
-def generate(state: GraphState, use_documents=True) -> Dict[str, Any]:
+def generate(state: GraphState, use_documents=True) -> dict:
     print("---generate---")
     question = state["question"]
     documents = state["documents"]
     messages = state.get("messages", [])
 
-
     # Extract text from documents
     if isinstance(documents, list) and use_documents:
         context_str = "\n\n".join(
-            [doc.page_content if hasattr(doc, "page_content")
-             else str(doc) for doc in documents]
+            [doc.page_content if hasattr(doc, "page_content") else str(doc) for doc in documents]
         )
     else:
         context_str = str(documents)
 
-    # Add last N messages to context.
+    # Add last N messages to context
     if messages:
-        last_messages = messages[-3:]
-        history_str = "\n\n".join([f"{m['role'].capitalize()}: {m['content']}" for m in last_messages])
+        last_messages = messages # Already filtered in state
+        # Use .type or isinstance to determine role
+        history_str = "\n\n".join([
+            f"{'User' if isinstance(m, HumanMessage) else 'Assistant'}: {m.content}"
+            for m in last_messages
+        ])
         context_str = f"{context_str}\n\nConversation history:\n{history_str}"
 
     chain = prompt | llm | StrOutputParser()
     answer = chain.invoke({"question": question, "context": context_str})
 
-    # Append question/answer to messages
+    # Append question/answer as BaseMessage objects
     messages.extend([
-        {"role": "user", "content": question},
-        {"role": "assistant", "content": answer}
+        HumanMessage(content=question),
+        AIMessage(content=answer)
     ])
 
     return {

@@ -7,34 +7,55 @@ from src.state.state import GraphState
 
 load_dotenv()
 
-def route_decision(state):
-    # call the structured LLM once
-    result = question_router.invoke(state)
-    return result.datasource
-
 ### NODES
 workflow = StateGraph(GraphState)
-workflow.add_node("ROUTER",route_decision)
+
+# Memory nodes
+workflow.add_node("MEMORY_READ", read_memory_node)
+workflow.add_node("MEMORY_WRITE", write_memory_node)
+
+workflow.add_node("ROUTER",route_query_node)
 workflow.add_node("RETRIEVE",retrieve)
 workflow.add_node("WEBSEARCH",web_search)
 workflow.add_node("GENERATE",generate)
 
 ### EDGES
-workflow.add_edge(START, "ROUTER")
+#workflow.add_edge(START, "ROUTER")
+workflow.add_edge(START, "MEMORY_READ")
+workflow.add_edge("MEMORY_READ", "ROUTER")
+
 workflow.add_conditional_edges(
     "ROUTER",
-    lambda datasource: datasource,
-    # path map
+    lambda state: state["route"],  # get route from state
     {
         "messages": "GENERATE",
         "vectorstore": "RETRIEVE",
-        "websearch": "WEBSEARCH",}
+        "websearch": "WEBSEARCH",
+    }
 )
 
 workflow.add_edge("WEBSEARCH", "GENERATE")
 workflow.add_edge("RETRIEVE", "GENERATE")
-workflow.add_edge("GENERATE", END)
-
+#workflow.add_edge("GENERATE", END)
+workflow.add_edge("GENERATE", "MEMORY_WRITE")
+workflow.add_edge("MEMORY_WRITE", END)
 
 app = workflow.compile()
-app.get_graph().draw_mermaid_png(output_file_path="agent.png")
+
+if __name__ == '__main__':
+    app.get_graph().draw_mermaid_png(output_file_path="agent.png")
+    # Example initial state
+    state = {
+        "question": "What can you tell me about main diseases in cattle?",
+        "answer": "",           # empty for now, agent will fill
+        "web_search": False,
+        "documents": [],        # optional
+        "messages": [],         # memory will be filled
+        "user_id": "user123"    # required for memory nodes
+    }
+
+    # Invoke the workflow
+    result_state = app.invoke(state)
+
+    # Check the result
+    print("Final state:", result_state)

@@ -43,3 +43,21 @@ route_prompt = ChatPromptTemplate.from_messages(
 )
 
 question_router = route_prompt | structured_llm_router
+
+def route_query_node(state: dict) -> dict:
+    """
+    Calls the LLM router to decide which datasource to use.
+    Returns a dict with the router output merged into the state.
+    """
+    # Make sure messages exist
+    messages = state.get("messages", [])
+
+    # Invoke the structured LLM router
+    router_result = question_router.invoke({
+        "messages": messages,
+        "question": state.get("question", "")
+    })
+
+    # router_result is a RouteQuery object with 'datasource'
+    # Return as dict so LangGraph merges it correctly
+    return {"route": router_result.datasource}
