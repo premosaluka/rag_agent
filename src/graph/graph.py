@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 
 from langgraph.graph import START, END, StateGraph
+from langgraph.checkpoint.memory import MemorySaver
 import CONFIG as C
 from src.nodes import *
 from src.state.state import GraphState
@@ -40,13 +41,15 @@ workflow.add_edge("RETRIEVE", "GENERATE")
 workflow.add_edge("GENERATE", "MEMORY_WRITE")
 workflow.add_edge("MEMORY_WRITE", END)
 
-app = workflow.compile()
+# app = workflow.compile()
+memory = MemorySaver()
+app = workflow.compile(checkpointer=memory)
 
 if __name__ == '__main__':
-    app.get_graph().draw_mermaid_png(output_file_path="agent.png")
+    # app.get_graph().draw_mermaid_png(output_file_path="agent.png")
     # Example initial state
     state = {
-        "question": "What can you tell me about main diseases in cattle?",
+        "question": "WHat is blue tongue ?",
         "answer": "",           # empty for now, agent will fill
         "web_search": False,
         "documents": [],        # optional
@@ -55,7 +58,18 @@ if __name__ == '__main__':
     }
 
     # Invoke the workflow
-    result_state = app.invoke(state)
+    result_state = app.invoke(state,
+                              config={"configurable": {"thread_id": "user-123"}})
 
     # Check the result
     print("Final state:", result_state)
+
+    result_state = app.invoke({"question":"What was the previous topic?"},
+                              config={"configurable": {"thread_id": "user-123"}})
+
+
+
+    # Check the result
+    print("Final state:", result_state)
+
+    print('finally over')
